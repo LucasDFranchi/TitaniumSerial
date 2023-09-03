@@ -1,6 +1,6 @@
 import pytest
 
-from src.message import MessageBuilder
+from src.message_builder import MessageBuilder
 
 @pytest.fixture
 def message_object():

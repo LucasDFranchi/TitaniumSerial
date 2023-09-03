@@ -1,6 +1,8 @@
 import binascii
 import struct
 
+from src import MessageBounds
+
 class MessageBuilder:
     @classmethod
     def set_command(cls, command):
@@ -60,8 +62,8 @@ class MessageBuilder:
 
     class Message:
         def __init__(self, command, memory_area, data):
-            self._start_byte = b'\x02'
-            self._end_byte = b'\x03'
+            self._start_byte = MessageBounds.START_BYTE
+            self._end_byte = MessageBounds.END_BYTE
             self._command = command
             self._memory_area = memory_area
             self._data_length = len(data).to_bytes(2, byteorder='big')
