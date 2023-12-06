@@ -43,3 +43,9 @@ class SerialBuilder:
         def close_serial_port(self):
             self._serial.close()
 
+        def send_byte_stream(self, byte_stream: bytearray):
+            self._serial.write(byte_stream)
+
+        def read_byte_stream(self):
+            return self._serial.read_all()
+

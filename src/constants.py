@@ -1,14 +1,14 @@
 from enum import Enum
 
-class MessageBounds(Enum):
+class MessageBounds:
     START_BYTE = b'\x02'
     END_BYTE = b'\x03'
 
-class MessageCommands(Enum):
+class MessageCommands:
     READ = b'\x52'
     WRITE = b'\x57'
 
-class MessageAreas(Enum):
-    DISPLAY = b'\x01'
-    SSID = b'\x02'
-    PASSWORD = b'\x03'
+class MessageAreas:
+    DISPLAY = b'\x00'
+    SSID = b'\x01'
+    PASSWORD = b'\x02'

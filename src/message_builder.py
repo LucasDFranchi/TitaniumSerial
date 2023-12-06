@@ -1,7 +1,7 @@
 import binascii
 import struct
 
-from src import MessageBounds
+from .constants import MessageBounds
 
 class MessageBuilder:
     @classmethod
@@ -90,7 +90,7 @@ class MessageBuilder:
             """
             return self._start_byte + self._data_length + \
                 self._command + self._memory_area + self._data + \
-                self._end_byte
+                self._crc + self._end_byte
         
         def _calculate_crc(self):
             """
