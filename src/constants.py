@@ -12,3 +12,6 @@ class MessageAreas:
     DISPLAY = b'\x00'
     SSID = b'\x01'
     PASSWORD = b'\x02'
+    CONNECTION = b'\x03'
+    LORA_WRITE = b'\x04'
+    LORA_READ = b'\x05'

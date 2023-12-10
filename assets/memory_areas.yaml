@@ -1,0 +1,20 @@
+display:
+  size: 1024
+  access: read-write
+  index: 0
+connection_status:
+  size: 1
+  access: read-write
+  index: 1
+lora_read:
+  size: 64
+  access: read-write
+  index: 2
+lora_write:
+  size: 64
+  access: read-write
+  index: 3
+credentials:
+  size: 96
+  access: read-write
+  index: 4
