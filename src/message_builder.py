@@ -1,5 +1,6 @@
 import binascii
 import struct
+import yaml
 
 from .constants import MessageBounds
 
@@ -62,12 +63,17 @@ class MessageBuilder:
 
     class Message:
         def __init__(self, command, memory_area, data):
+            _APPEND_BYTE = b'\x00'
+
+            _memory_area_size = self._get_message_size(memory_area)
+            _not_null_size = len(data)
+
             self._start_byte = MessageBounds.START_BYTE
             self._end_byte = MessageBounds.END_BYTE
             self._command = command
             self._memory_area = memory_area
-            self._data_length = len(data).to_bytes(2, byteorder='big')
-            self._data = data
+            self._data_length = _memory_area_size.to_bytes(2, byteorder='big')
+            self._data = data + (_APPEND_BYTE * (_memory_area_size - _not_null_size))
             self._crc = self._calculate_crc()
 
         @property
@@ -102,3 +108,15 @@ class MessageBuilder:
             _byte_stream = self._start_byte + self._data_length + \
                 self._command + self._memory_area + self._data
             return struct.pack(">I", binascii.crc32(_byte_stream))
+
+        def _get_message_size(self, memory_area):
+            _size = 0
+            _converted_area = int.from_bytes(memory_area, byteorder='little')
+
+            with open("./assets/memory_areas.yaml", "r") as yaml_file:
+                data = yaml.safe_load(yaml_file)
+                for key, entry in data.items():
+                    if entry.get("index") == _converted_area:
+                        _size = entry.get("size")
+
+            return _size

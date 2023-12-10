@@ -1,0 +1,16 @@
+display:
+  size: 1024
+  access: read-write
+  index: 0
+ssid:
+  size: 32
+  access: read-write
+  index: 1
+password:
+  size: 64
+  access: read-write
+  index: 2
+connection_status:
+  size: 1
+  access: read-write
+  index: 3

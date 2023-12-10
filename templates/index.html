@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <!-- <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"> -->
+
+    <title>Serial Communication</title>
+</head>
+<body>
+    <h1>Serial Communication</h1>
+    <div class="navigation-side">
+        <div class="nav-header">
+            <img class="logo" src="{{ url_for('static', path='img/logo.png') }}">
+            <label class="logo-label">TTITANIUM</label>
+        </div>
+        <div class="nav-body">
+            <label class="nav-title">MAIN</label>
+            <div class="nav-buttons-container">
+                <button class="nav-serial-dashboard">
+                    <span class="material-icons-outlined">space_dashboard</span>
+                    <label class="button-label">Dashboard</label>
+                </button>
+            </div>
+            <div class="nav-buttons-container">
+                <button class="nav-serial-dashboard">
+                    <i class="material-icons-outlined">mail</i>
+                    <label class="button-label">Serial</label>
+                </button>
+            </div>
+            <div class="nav-buttons-container">
+                <button class="nav-serial-dashboard">
+                    <i class="material-icons-outlined">http</i>
+                    <label class="button-label">HTTP</label>
+                </button>
+            </div>
+            <div class="nav-buttons-container">
+                <button class="nav-serial-dashboard">
+                    <i class="material-icons-outlined">settings</i>
+                    <label class="button-label">Settings</label>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="serial-interface">
+        <div class="configuration">
+            <div class="input-field">
+                <label for="comPort">COM Port:</label>
+                <select id="comPort" name="comPort" required>
+                    <option value="COM1">COM1</option>
+                    <option value="COM2">COM2</option>
+                    <option value="COM3">COM3</option>
+                    <option value="COM3">COM4</option>
+                </select>
+            </div>
+            <div class="input-field">
+                <label for="baudrate">Baudrate:</label>
+                <select id="baudrate" name="baudrate" required>
+                    <option value="1200">1200</option>
+                    <option value="2400">2400</option>
+                    <option value="4800">4800</option>
+                    <option value="9600">9600</option>
+                    <option value="19200">19200</option>
+                    <option value="38400">38400</option>
+                    <option value="57600">57600</option>
+                    <option value="115200">115200</option>
+                    <option value="230400">230400</option>
+                </select>
+            </div>
+            <button class="connect-button" onclick="sendConfig()">Connect</button>
+        </div>
+
+        <div class="command">
+            <div class="command-spec">
+                <div class="input-field">
+                    <label for="command">Command:</label>
+                    <select id="command" name="command" required>
+                        <option value="57">Write</option>
+                        <option value="52">Read</option>
+                    </select>
+                </div>
+                <div class="input-field">
+                    <label for="mem_area">Memory Area:</label>
+                    <select id="mem_area" name="mem_area" required>
+                        <option value="0">Display</option>
+                        <option value="1">SSID</option>
+                        <option value="2">Network Password</option>
+                        <option value="3">Connection Status</option>
+                    </select>
+                </div>
+            </div>
+            <div class="data-field">
+                <label for="data">Data:</label>
+                <textarea  class="data-input" type="text" id="data" name="data"></textarea>
+            </div>
+            <button  class="send-button" onclick="sendMessage()">SendMessage</button>
+        </div>
+    </div>  
+    
+    <script>
+        function sendConfig() {
+            var comPort = document.getElementById('comPort').value;
+            var baudrate = document.getElementById('baudrate').value;
+
+            // Data to be sent in the POST request
+            var postData = {
+                comPort: comPort,
+                baudrate: baudrate
+            };
+
+            // Make a POST request using Fetch API
+            fetch('/send_config', {
+                method: 'POST',  // Specify the method as POST
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+        }
+
+        function sendMessage() {
+            var command = document.getElementById('command').value;
+            var mem_area = document.getElementById('mem_area').value;
+            var data = document.getElementById('data').value;
+
+            // Data to be sent in the POST request
+            var postData = {
+                command: command,
+                mem_area: mem_area,
+                data: data
+            };
+
+            fetch('/send_message', {
+            method: 'POST',  // Specify the method as POST
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(postData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the content of the element with class 'data-input'
+                var dataInputElement = document.querySelector('.data-input');
+                dataInputElement.value = data.updatedContent;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

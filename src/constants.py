@@ -12,3 +12,4 @@ class MessageAreas:
     DISPLAY = b'\x00'
     SSID = b'\x01'
     PASSWORD = b'\x02'
+    CONNECTION = b'\x03'
