@@ -6,7 +6,7 @@ from src.constants import MessageCommands, MessageAreas
 
 def stress_test():
     com_port = "COM3"
-    baudrate = 230400
+    baudrate = 115200
 
     serial = (SerialBuilder.read_configuration()
                             .update_port(com_port)
@@ -26,7 +26,7 @@ def stress_test():
         
         serial.send_byte_stream(message.byte_stream)
 
-        time.sleep(0.1)
+        time.sleep(0.2)
 
     serial.close_serial_port()
 
