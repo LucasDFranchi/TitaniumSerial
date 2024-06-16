@@ -6,15 +6,18 @@ from src.serial_builder import SerialBuilder
 from src.message_builder import MessageBuilder
 from src.constants import MessageCommands, MessageAreas
 
+
 def communication_test():
     com_port = "COM3"
     baudrate = 115200
 
-    serial = (SerialBuilder.read_configuration()
-                            .update_port(com_port)
-                            .update_baudrate(baudrate)
-                            .build())
-    
+    serial = (
+        SerialBuilder.read_configuration()
+        .update_port(com_port)
+        .update_baudrate(baudrate)
+        .build()
+    )
+
     serial.open_serial_port()
     serial.flush()
 
@@ -25,23 +28,31 @@ def communication_test():
         for _, value in memory_areas_definitions.items():
 
             random_bytes = os.urandom(value.get("size"))
-            message = (MessageBuilder.set_memory_area(value.get("index").to_bytes(1, byteorder='big'))
-                                    .set_command(MessageCommands.WRITE)
-                                    .set_data(random_bytes)
-                                    .build())
+            message = (
+                MessageBuilder.set_memory_area(
+                    value.get("index").to_bytes(1, byteorder="big")
+                )
+                .set_command(MessageCommands.WRITE)
+                .set_data(random_bytes)
+                .build()
+            )
             serial.send_byte_stream(message.byte_stream)
             time.sleep(0.5)
             return_stream = serial.read_byte_stream()
-            if (b"ACKOK" not in return_stream):
+            if b"ACKOK" not in return_stream:
                 print(return_stream)
                 print(f"Error in Write {value.get('index')}")
                 break
-            
-            message = (MessageBuilder.set_memory_area(value.get("index").to_bytes(1, byteorder='big'))
-                                    .set_command(MessageCommands.READ)
-                                    .set_data(random_bytes)
-                                    .build())
-            
+
+            message = (
+                MessageBuilder.set_memory_area(
+                    value.get("index").to_bytes(1, byteorder="big")
+                )
+                .set_command(MessageCommands.READ)
+                .set_data(random_bytes)
+                .build()
+            )
+
             serial.send_byte_stream(message.byte_stream)
             time.sleep(0.5)
             return_stream = serial.read_byte_stream()
@@ -49,7 +60,8 @@ def communication_test():
                 print(f"Error in Read {value.get('index')}")
             else:
                 print(f"Memory Area {value.get('index')} read and write succesfully!")
-        
+
+
 def _import_areas_definition():
     data = None
 
@@ -58,8 +70,10 @@ def _import_areas_definition():
 
     return data
 
+
 def _clear_serial_start_up(serial):
     time.sleep(5)
     serial.read_byte_stream()
+
 
 communication_test()

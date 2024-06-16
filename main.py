@@ -1,76 +1,127 @@
-import binascii
-
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+import argparse
+import time
 
 from src import SerialBuilder
 from src import MessageBuilder
 from src import MessageCommands, MessageAreas
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-@app.post("/send_config")
-async def send_data(request: Request):
-    data = await request.json()
-
-    com_port = data.get("comPort", "COM3")
-    baudrate = data.get("baudrate", "115200")
-
-    app.serial = (SerialBuilder.read_configuration()
-                                   .update_port(com_port)
-                                   .update_baudrate(baudrate)
-                                   .build())
-    
-    app.serial.open_serial_port()
-    app.serial.flush()
-    
-    
-@app.post("/send_message")
-async def send_data(request: Request):
-    data = await request.json()
-
-    command = bytes.fromhex(data.get("command", ""))
-    mem_area = bytes.fromhex(data.get("mem_area", "").zfill(2))
-    if command == MessageCommands.WRITE:
-        data_command = bytes.fromhex(data.get("data", "FF").zfill(2))
-    else:
-        data_command = b'\xFF'
-
-    message = (MessageBuilder.set_memory_area(mem_area)
-                             .set_command(command)
-                             .set_data(data_command)
-                             .build())
-    
-    if hasattr(app, 'serial'):
-        app.serial.send_byte_stream(message.byte_stream)
-        return_message = app.serial.read_byte_stream()
-        if command == MessageCommands.READ:
-            if b'ACKOK' in return_message:
-                try:
-                    hex_string = return_message.decode('utf-8')
-                    updated_content = hex_string.split("ACKOK")[0]
-                    print(hex_string) 
-                except:
-                    hex_string = binascii.hexlify(return_message).decode('utf-8').upper()
-                    updated_content = hex_string.replace('0', '').replace("41434B4F4B", '')
-
-                return JSONResponse(content={"updatedContent": updated_content})
-
-
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+def handle_argparse():
     """
-    Route to handle requests to the root endpoint.
-
-    Parameters:
-    - request (fastapi.Request): The incoming HTTP request.
+    Parse command-line arguments.
 
     Returns:
-    - fastapi.responses.HTMLResponse: An HTML response rendered using Jinja2 templates.
+        argparse.Namespace: Parsed command-line arguments.
     """
+    parser = argparse.ArgumentParser(
+        description="Script used to run tests in a QEMU emulated environment"
+    )
+
+    parser.add_argument(
+        "--baudrate",
+        "-b",
+        type=int,  # Baudrate is typically an integer
+        help="Serial Baudrate. Default is 115200.",
+        default=115200,
+    )
+
+    parser.add_argument(
+        "--port",
+        "-p",
+        type=str,
+        help="Communication port. Default is 'COM3'.",
+        default="/dev/tty3",
+    )
+
+    parser.add_argument(
+        "--file",
+        "-f",
+        type=str,
+        help="Path to a file containing the command to send.",
+    )
+
+    parser.add_argument(
+        "--payload",
+        type=str,
+        help="Payload to send directly as a command.",
+    )
+
+    parser.add_argument(
+        "--command",
+        "-c",
+        type=str,
+        choices=["R", "W", "r", "w"],
+        help="Command to interact with the requested memory area (R for read, W for write).",
+    )
+
+    parser.add_argument(
+        "--memory_area",
+        "-m",
+        type=int,
+        help="Firmware memory area to access through serial.",
+    )
     
-    return templates.TemplateResponse("index.html", {"request": request})
+    parser.add_argument(
+        "--timeout",
+        "-t",
+        type=int,
+        help="Timeout in seconds for waiting for a response from the host. Default is 20 seconds.",
+        default=5,
+    )
+
+    args = parser.parse_args()
+
+    if args.file and args.payload:
+        parser.error(
+            "Arguments --file and --payload are mutually exclusive. Provide only one."
+        )
+    elif not args.file and not args.payload:
+        parser.error("One of --file or --payload must be provided.")
+
+    return args
+
+
+def main():
+    args = handle_argparse()
+    payload = None
+
+    serial = (
+        SerialBuilder.read_configuration()
+        .update_port(args.port)
+        .update_baudrate(args.baudrate)
+        .build()
+    )
+
+    serial.open_serial_port()
+    serial.flush()
+
+    if args.file:
+        with open(args.file, 'rb') as file:
+            payload = file.read()
+    else:
+        payload = args.payload.encode()
+
+    message = (
+        MessageBuilder.set_memory_area(args.memory_area)
+        .set_command(args.command)
+        .set_data(payload)
+        .build()
+    )
+    
+    serial.send_byte_stream(message.byte_stream)
+    # time.sleep(0.25)  # Adjust sleep time as needed
+    
+
+    print("Message sent to the host, waiting for host reply...")
+    
+    start_time = time.time()
+    while (time.time() - start_time) < args.timeout:
+        response = serial.read_byte_stream()
+        if len(response) > 0:
+            print(response)
+        if b"NAK" in response or b"ACK" in response:
+            break
+        time.sleep(0.1)  # Adjust sleep time as needed
+
+
+if __name__ == "__main__":
+    main()
