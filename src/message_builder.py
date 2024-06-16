@@ -20,6 +20,10 @@ class MessageBuilder:
             cls._command = MessageCommands.READ
         elif command == 'W':
             cls._command = MessageCommands.WRITE
+        elif command == 'E':
+            cls._command = MessageCommands.RESPONSE
+        elif command == 'A':
+            cls._command = MessageCommands.ACK
         return cls
 
     @classmethod
@@ -70,7 +74,7 @@ class MessageBuilder:
             self._end_byte = MessageBounds.END_BYTE
             self._command = command
             self._memory_area = memory_area
-            self._data_length = len(data).to_bytes(2, byteorder="big")
+            self._data_length = len(data).to_bytes(2, byteorder="little")
             self._data = data
             self._crc = self._calculate_crc()
 
@@ -127,4 +131,4 @@ class MessageBuilder:
                 + self._memory_area
                 + self._data
             )
-            return struct.pack(">I", binascii.crc32(_byte_stream))
+            return struct.pack("<I", binascii.crc32(_byte_stream))

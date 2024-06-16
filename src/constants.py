@@ -7,6 +7,8 @@ class MessageBounds:
 
 
 class MessageCommands:
+    ACK = b'\x41'
+    RESPONSE = b'\x45'
     READ = b'\x52'
     WRITE = b'\x57'
 

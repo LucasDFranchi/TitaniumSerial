@@ -4,6 +4,7 @@ import time
 from src import SerialBuilder
 from src import MessageBuilder
 from src import MessageCommands, MessageAreas
+from src import Packet
 
 def handle_argparse():
     """
@@ -67,6 +68,12 @@ def handle_argparse():
         help="Timeout in seconds for waiting for a response from the host. Default is 20 seconds.",
         default=5,
     )
+    
+    parser.add_argument(
+        "-l", "--listening",
+        action="store_true",
+        help="Enable listening mode. In this mode, the program waits for host messages."
+    )
 
     args = parser.parse_args()
 
@@ -79,10 +86,62 @@ def handle_argparse():
 
     return args
 
+def read_payload(args):
+    """
+    Reads the payload data based on arguments.
+
+    Args:
+        args (argparse.Namespace): Parsed arguments object.
+
+    Returns:
+        bytes: Payload data read from file or encoded payload string.
+    """
+    if args.file:
+        with open(args.file, 'rb') as file:
+            payload = file.read()
+    else:
+        payload = args.payload.encode()
+    return payload
+
+def build_message(args, payload):
+    """
+    Constructs a message object using provided arguments and payload.
+
+    Args:
+        args (argparse.Namespace): Parsed arguments object.
+        payload (bytes): Payload data to include in the message.
+
+    Returns:
+        Message: Constructed message object.
+    """
+    message = (
+        MessageBuilder.set_memory_area(args.memory_area)
+        .set_command(args.command)
+        .set_data(payload)
+        .build()
+    )
+    return message
+
+def wait_for_response(serial, args):
+    """
+    Waits for a response from the host after sending a message.
+
+    Args:
+        serial: Serial interface object with read_byte_stream method.
+        args (argparse.Namespace): Parsed arguments object.
+    """    
+    start_time = time.time()
+    while (time.time() - start_time) < args.timeout:
+        response = serial.read_byte_stream()
+        if len(response) > 0:
+            break
+        time.sleep(0.1)
+        
+    return response
+
 
 def main():
     args = handle_argparse()
-    payload = None
 
     serial = (
         SerialBuilder.read_configuration()
@@ -93,34 +152,23 @@ def main():
 
     serial.open_serial_port()
     serial.flush()
-
-    if args.file:
-        with open(args.file, 'rb') as file:
-            payload = file.read()
+    
+    if not args.listening:
+        payload = read_payload(args)
+        message = build_message(args, payload)
+        
+        serial.send_byte_stream(message.byte_stream)
+        print("Message sent to the host, waiting for host reply...") 
+        response = wait_for_response(serial, args)
+        Packet.from_byte_stream(response)
     else:
-        payload = args.payload.encode()
-
-    message = (
-        MessageBuilder.set_memory_area(args.memory_area)
-        .set_command(args.command)
-        .set_data(payload)
-        .build()
-    )
-    
-    serial.send_byte_stream(message.byte_stream)
-    # time.sleep(0.25)  # Adjust sleep time as needed
-    
-
-    print("Message sent to the host, waiting for host reply...")
-    
-    start_time = time.time()
-    while (time.time() - start_time) < args.timeout:
-        response = serial.read_byte_stream()
-        if len(response) > 0:
-            print(response)
-        if b"NAK" in response or b"ACK" in response:
-            break
-        time.sleep(0.1)  # Adjust sleep time as needed
+        while(True):
+            try:
+                response = wait_for_response(serial, args)
+                Packet.from_byte_stream(response)
+            except Exception as e:
+                pass
+                # print(e)
 
 
 if __name__ == "__main__":
