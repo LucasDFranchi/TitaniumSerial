@@ -1,0 +1,5 @@
+from .CommunicationProto import CommunicationProtobuf
+from .ConnectionStatusProto import ConnectionStatusProtobuf
+from .CredentialsProto import CredentialsProtobuf
+from .MQTTUriProto import MQTTUriProtobuf
+from .WaterLevelProto import WaterLevelProtobuf

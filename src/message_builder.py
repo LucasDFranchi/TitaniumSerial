@@ -1,29 +1,56 @@
 import binascii
+import os
 import struct
 
 from .constants import MessageBounds, MessageCommands
 
-
 class MessageBuilder:
+    _uuid = 0xFFFF
+    
+    @classmethod
+    def set_address(cls, address):
+        """
+        Set the address for the message.
+
+        Args:
+            address (bytes): The address to set.
+
+        Returns:
+            cls: The class instance for method chaining.
+        """
+        if 0xFFFF > address > 0:
+            cls._address = address
+        return cls
+    
+    @classmethod
+    def set_uuid(cls, uuid):
+        """
+        Set the uuid for the message.
+
+        Args:
+            uuid (bytes): The uuid to set.
+
+        Returns:
+            cls: The class instance for method chaining.
+        """
+        cls._uuid = uuid
+        return cls
+    
     @classmethod
     def set_command(cls, command):
         """
         Set the command for the message.
 
         Args:
-            command (bytes): The command to set.
+            command (CommandType): The command to set.
 
         Returns:
             cls: The class instance for method chaining.
         """
-        if command == 'R':
-            cls._command = MessageCommands.READ
-        elif command == 'W':
-            cls._command = MessageCommands.WRITE
-        elif command == 'E':
-            cls._command = MessageCommands.RESPONSE
-        elif command == 'A':
-            cls._command = MessageCommands.ACK
+        if isinstance(command, MessageCommands):
+            cls._command = command
+        else:
+            raise ValueError("command must be an instance of CommandType Enum")
         return cls
 
     @classmethod
@@ -64,15 +91,19 @@ class MessageBuilder:
         """
         return cls.Message(
             command=cls._command,
+            address=cls._address,
             memory_area=cls._memory_area,
             data=cls._data,
+            uuid=cls._uuid,
         )
 
     class Message:
-        def __init__(self, command, memory_area, data):
+        def __init__(self, command, address, memory_area, data, uuid = None):
             self._start_byte = MessageBounds.START_BYTE
             self._end_byte = MessageBounds.END_BYTE
+            self._uuid = os.urandom(4) if uuid is None else uuid 
             self._command = command
+            self._address = address
             self._memory_area = memory_area
             self._data_length = len(data).to_bytes(2, byteorder="little")
             self._data = data
@@ -98,8 +129,10 @@ class MessageBuilder:
             """
             return (
                 self._start_byte
+                + self._uuid
                 + self._data_length
                 + self._command
+                + self._address
                 + self._memory_area
                 + self._data
                 + self._crc

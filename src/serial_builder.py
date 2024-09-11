@@ -28,7 +28,6 @@ class SerialBuilder:
 
         cls._port = _config.get("SerialConfig", "port")
         cls._baudrate = _config.getint("SerialConfig", "baudrate")
-
         cls._timeout = _config.getfloat("SerialConfig", "timeout", fallback=1.0)
         cls._parity = _config.get("SerialConfig", "parity", fallback="N")
         cls._stop_bits = _config.getint("SerialConfig", "stop_bits", fallback=1)

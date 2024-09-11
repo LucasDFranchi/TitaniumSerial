@@ -20,7 +20,7 @@ def handle_argparse():
     parser.add_argument(
         "--baudrate",
         "-b",
-        type=int,  # Baudrate is typically an integer
+        type=int,
         help="Serial Baudrate. Default is 115200.",
         default=115200,
     )
@@ -47,10 +47,16 @@ def handle_argparse():
     )
 
     parser.add_argument(
+        "--address",
+        "-a",
+        type=str,
+        help="Address of the device that will receive the message",
+    )
+
+    parser.add_argument(
         "--command",
         "-c",
         type=str,
-        choices=["R", "W", "r", "w"],
         help="Command to interact with the requested memory area (R for read, W for write).",
     )
 
@@ -117,6 +123,7 @@ def build_message(args, payload):
     message = (
         MessageBuilder.set_memory_area(args.memory_area)
         .set_command(args.command)
+        .set_address(args.address)
         .set_data(payload)
         .build()
     )
@@ -153,23 +160,14 @@ def main():
     serial.open_serial_port()
     serial.flush()
     
-    if not args.listening:
-        payload = read_payload(args)
-        message = build_message(args, payload)
-        
-        serial.send_byte_stream(message.byte_stream)
-        print("Message sent to the host, waiting for host reply...") 
+    payload = read_payload(args)
+    message = build_message(args, payload)
+    
+    serial.send_byte_stream(message.byte_stream)
+    
+    if args.command not in [MessageCommands.WRITE_COMMAND]:
         response = wait_for_response(serial, args)
         Packet.from_byte_stream(response)
-    else:
-        while(True):
-            try:
-                response = wait_for_response(serial, args)
-                Packet.from_byte_stream(response)
-            except Exception as e:
-                pass
-                # print(e)
-
 
 if __name__ == "__main__":
     main()
