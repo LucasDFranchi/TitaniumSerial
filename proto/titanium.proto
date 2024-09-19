@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+// Message representing network credentials for connecting to a Wi-Fi network.
+message NetworkCredentials {
+    // SSID (Service Set Identifier) of the Wi-Fi network.
+    string ssid = 1 [(nanopb).max_size = 32];
+
+    // Password for the Wi-Fi network.
+    string password = 2 [(nanopb).max_size = 64];
+}
+
+// Enumeration for representing network connection status.
+enum NetworkStatus {
+  DISCONNECTED = 0; // Indicates that the network is disconnected.
+  CONNECTED = 1;    // Indicates that the network is connected.
+}
+
+// Enum to specify different memory areas used by the system.
+enum MemoryAreas {
+  NETWORK_CREDENTIALS = 0;   // Memory area allocated for storing network credentials.
+  NETWORK_INFORMATION = 1;   // Memory area for storing the status of network connections.
+  BROKER_CONFIG = 2;         // Memory area dedicated to broker configuration settings.
+  COMMUNICATION_CONFIG = 3;  // Memory area used for communication configuration settings.
+  UART_SINGLE_PACKET = 4;    // Memory area for single UART packet configurations.
+  UART_CONTINUOS_PACKET = 5; // Memory area for continuous UART packet configurations.
+  LORA_SINGLE_PACKET = 6;    // Memory area for single LoRa packet configurations.
+  LORA_CONTINUOS_PACKET = 7; // Memory area for continuous LoRa packet configurations.
+}
+
+// Message representing the status of network connections.
+message NetworkInformation {
+    // Status of the access point (AP) connection.
+    NetworkStatus ap_connected = 1;
+
+    // Status of the station (STA) connection.
+    NetworkStatus sta_connected = 2;
+}
+
+// Message representing configuration details for the broker.
+message BrokerConfig {
+    // URI of the broker to which the device will connect.
+    string broker_uri = 1 [(nanopb).max_size = 256];
+}
+
+// Message representing packet request, write to this area to read some area.
+message PacketRequest {
+    // Specifies the address to which this packet should be sent.
+    int32 destination_address = 1;
+
+    // Specifies the area in the destination device that will store the received information.
+    MemoryAreas destination_area = 2;
+
+    // Specifies the area that should be sent to the destination device.
+    MemoryAreas requested_area = 3;
+
+    // Time interval (in milliseconds) between the packets.
+    uint32 packet_interval = 4;
+
+    // Time the last transmission occur
+    uint64 last_transmission = 5;
+}
+
+// Message representing communication configuration including multiple packet configurations.
+message ContinuosPacketList{
+    // Repeated field of packet requests.
+    repeated PacketRequest packet_configs = 1 [(nanopb).max_count = 8];
+}
