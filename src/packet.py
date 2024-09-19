@@ -37,6 +37,6 @@ class Packet:
         if payload_length != len(payload):
             return
         if byte_stream[:10+payload_length] == message.byte_stream:
-            print(f"Received Data: {payload.decode("utf-8")}")
+            print(f"Received Data: {payload.decode('utf-8')}")
             
         return cls(memory_area, command, payload)

@@ -1,10 +1,16 @@
 import argparse
 import time
+import sys
 
 from src import SerialBuilder
 from src import MessageBuilder
 from src import MessageCommands, MessageAreas
 from src import Packet
+
+sys.path.append("./proto_out/")
+
+from proto_out import titanium_pb2
+
 
 def handle_argparse():
     """
@@ -54,19 +60,12 @@ def handle_argparse():
     )
 
     parser.add_argument(
-        "--command",
-        "-c",
-        type=str,
-        help="Command to interact with the requested memory area (R for read, W for write).",
-    )
-
-    parser.add_argument(
         "--memory_area",
         "-m",
         type=int,
         help="Firmware memory area to access through serial.",
     )
-    
+
     parser.add_argument(
         "--timeout",
         "-t",
@@ -74,11 +73,12 @@ def handle_argparse():
         help="Timeout in seconds for waiting for a response from the host. Default is 20 seconds.",
         default=5,
     )
-    
+
     parser.add_argument(
-        "-l", "--listening",
+        "--wait_response",
+        "-w",
         action="store_true",
-        help="Enable listening mode. In this mode, the program waits for host messages."
+        help="Enable listening mode. In this mode, the program waits for host messages.",
     )
 
     args = parser.parse_args()
@@ -92,6 +92,7 @@ def handle_argparse():
 
     return args
 
+
 def read_payload(args):
     """
     Reads the payload data based on arguments.
@@ -103,11 +104,12 @@ def read_payload(args):
         bytes: Payload data read from file or encoded payload string.
     """
     if args.file:
-        with open(args.file, 'rb') as file:
+        with open(args.file, "rb") as file:
             payload = file.read()
     else:
         payload = args.payload.encode()
     return payload
+
 
 def build_message(args, payload):
     """
@@ -129,6 +131,7 @@ def build_message(args, payload):
     )
     return message
 
+
 def wait_for_response(serial, args):
     """
     Waits for a response from the host after sending a message.
@@ -136,19 +139,21 @@ def wait_for_response(serial, args):
     Args:
         serial: Serial interface object with read_byte_stream method.
         args (argparse.Namespace): Parsed arguments object.
-    """    
+    """
     start_time = time.time()
     while (time.time() - start_time) < args.timeout:
         response = serial.read_byte_stream()
         if len(response) > 0:
             break
         time.sleep(0.1)
-        
+
     return response
 
 
 def main():
     args = handle_argparse()
+
+    # network_credentials = titanium_pb2.NetworkCredentials()
 
     serial = (
         SerialBuilder.read_configuration()
@@ -159,15 +164,16 @@ def main():
 
     serial.open_serial_port()
     serial.flush()
-    
-    payload = read_payload(args)
-    message = build_message(args, payload)
-    
-    serial.send_byte_stream(message.byte_stream)
-    
-    if args.command not in [MessageCommands.WRITE_COMMAND]:
-        response = wait_for_response(serial, args)
-        Packet.from_byte_stream(response)
+
+    # payload = read_payload(args)
+    # message = build_message(args, payload)
+
+    # serial.send_byte_stream(message.byte_stream)
+
+    # if args.command not in [MessageCommands.WRITE_COMMAND]:
+    #     response = wait_for_response(serial, args)
+    #     Packet.from_byte_stream(response)
+
 
 if __name__ == "__main__":
     main()
