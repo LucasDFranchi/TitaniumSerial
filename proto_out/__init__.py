@@ -1,1 +1,1 @@
-from .titanium_pb2 import NetworkCredentials
+from .protobuf_factory import ProtobufFactory

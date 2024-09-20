@@ -1,0 +1,7 @@
+{
+    "memory_area": 0,
+    "payload": {
+        "ssid": "SSID",
+        "password": "PASSWORD"
+    }
+}

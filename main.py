@@ -1,4 +1,5 @@
 import argparse
+import json
 import time
 import sys
 
@@ -9,8 +10,7 @@ from src import Packet
 
 sys.path.append("./proto_out/")
 
-from proto_out import titanium_pb2
-
+from proto_out import ProtobufFactory
 
 def handle_argparse():
     """
@@ -47,12 +47,6 @@ def handle_argparse():
     )
 
     parser.add_argument(
-        "--payload",
-        type=str,
-        help="Payload to send directly as a command.",
-    )
-
-    parser.add_argument(
         "--address",
         "-a",
         type=str,
@@ -82,33 +76,20 @@ def handle_argparse():
     )
 
     args = parser.parse_args()
-
-    if args.file and args.payload:
-        parser.error(
-            "Arguments --file and --payload are mutually exclusive. Provide only one."
-        )
-    elif not args.file and not args.payload:
-        parser.error("One of --file or --payload must be provided.")
-
+    
     return args
 
 
 def read_payload(args):
-    """
-    Reads the payload data based on arguments.
-
-    Args:
-        args (argparse.Namespace): Parsed arguments object.
-
-    Returns:
-        bytes: Payload data read from file or encoded payload string.
-    """
-    if args.file:
-        with open(args.file, "rb") as file:
-            payload = file.read()
-    else:
-        payload = args.payload.encode()
-    return payload
+    data = None
+    if args.file is None:
+        raise Exception("Invalid filepath!")
+    
+    factory = ProtobufFactory(args.file)
+    protobuf = factory.load_config_from_json()
+    
+    print(protobuf)
+    print(protobuf.SerializeToString())
 
 
 def build_message(args, payload):
@@ -153,17 +134,17 @@ def wait_for_response(serial, args):
 def main():
     args = handle_argparse()
 
-    # network_credentials = titanium_pb2.NetworkCredentials()
+    # serial = (
+    #     SerialBuilder.read_configuration()
+    #     .update_port(args.port)
+    #     .update_baudrate(args.baudrate)
+    #     .build()
+    # )
 
-    serial = (
-        SerialBuilder.read_configuration()
-        .update_port(args.port)
-        .update_baudrate(args.baudrate)
-        .build()
-    )
-
-    serial.open_serial_port()
-    serial.flush()
+    # serial.open_serial_port()
+    # serial.flush()
+    
+    read_payload(args)
 
     # payload = read_payload(args)
     # message = build_message(args, payload)
